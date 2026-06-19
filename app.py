@@ -1,27 +1,36 @@
 import os
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-import g4f
+from g4f.client import Client
 
 app = Flask(__name__)
 CORS(app)
 
+client = Client()
+
+
 @app.route("/")
 def home():
-    return jsonify({"status": "GPT4Free API Running"})
+    return jsonify({
+        "status": "GPT4Free API Running"
+    })
+
 
 @app.route("/test")
 def test():
     try:
-        response = g4f.ChatCompletion.create(
+        response = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
-                {"role": "user", "content": "Hello"}
+                {
+                    "role": "user",
+                    "content": "Hello"
+                }
             ]
         )
 
         return jsonify({
-            "reply": str(response)
+            "reply": response.choices[0].message.content
         })
 
     except Exception as e:
@@ -36,15 +45,17 @@ def scrape_ai():
         data = request.get_json()
 
         if not data or "messages" not in data:
-            return jsonify({"error": "Missing messages"}), 400
+            return jsonify({
+                "error": "Missing messages"
+            }), 400
 
-        response = g4f.ChatCompletion.create(
+        response = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=data["messages"]
         )
 
         return jsonify({
-            "reply": str(response)
+            "reply": response.choices[0].message.content
         })
 
     except Exception as e:
