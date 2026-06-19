@@ -8,17 +8,17 @@ CORS(app)
 
 g4f.debug.logging = False
 
-# g4f के नए नियमों के अनुसार बिल्कुल सटीक प्रोवाइडर्स और मॉडल्स नाम
+# तुम्हारी लाइव लिस्ट से निकाले गए सबसे बेहतरीन प्रोवाइडर्स और उनके सटीक मॉडल्स
 CONFIGS = [
-    {"provider": g4f.Provider.PollinationsAI, "model": "gpt-4o"},
-    {"provider": g4f.Provider.DDGS, "model": "gpt-4o-mini"} # DDG को बदलकर DDGS कर दिया गया है
+    {"provider": g4f.Provider.PollinationsAI, "model": "openai"},  # Pollinations के नए अपडेट में "openai" मॉडल नेम काम करता है
+    {"provider": g4f.Provider.PuterJS, "model": "gpt-4o-mini"}      # लिस्ट में मौजूद PuterJS पूरी तरह फ्री और स्टेबल है
 ]
 
 @app.route("/")
 def home():
     return jsonify({
         "status": "GPT4Free API Running",
-        "mode": "Fixed Provider Catalog"
+        "mode": "Live List Verified"
     })
 
 @app.route("/test")
