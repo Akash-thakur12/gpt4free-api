@@ -9,19 +9,11 @@ CORS(app)
 
 client = Client()
 
-# Working providers
-PROVIDERS = [
-    g4f.Provider.DDGS,
-    g4f.Provider.HuggingChat,
-    g4f.Provider.PollinationsAI
-]
-
 
 @app.route("/")
 def home():
     return jsonify({
-        "status": "GPT4Free API Running",
-        "mode": "Forced Providers"
+        "status": "GPT4Free API Running"
     })
 
 
@@ -46,8 +38,21 @@ def providers():
 @app.route("/test")
 def test():
 
-    for provider in PROVIDERS:
+    providers = [
+        g4f.Provider.DDGS,
+        g4f.Provider.HuggingChat,
+        g4f.Provider.PollinationsAI,
+        g4f.Provider.Pi,
+        g4f.Provider.Copilot,
+        g4f.Provider.Gemini,
+        g4f.Provider.OpenRouter
+    ]
+
+    results = []
+
+    for provider in providers:
         try:
+
             response = client.chat.completions.create(
                 model="gpt-4o-mini",
                 provider=provider,
@@ -61,32 +66,38 @@ def test():
 
             reply = response.choices[0].message.content
 
-            # Skip login pages and pricing messages
-            if (
-                "log in" in reply.lower()
-                or "sign in" in reply.lower()
-                or "pricing" in reply.lower()
-            ):
-                continue
-
-            return jsonify({
+            results.append({
                 "provider": provider.__name__,
+                "status": "SUCCESS",
                 "reply": reply
             })
 
         except Exception as e:
-            print(f"{provider.__name__} failed: {e}")
-            continue
 
-    return jsonify({
-        "error": "No provider worked"
-    }), 500
+            results.append({
+                "provider": provider.__name__,
+                "status": "FAILED",
+                "error": str(e)
+            })
+
+    return jsonify(results)
 
 
 @app.route("/scrape-ai", methods=["POST"])
 def scrape_ai():
 
+    providers = [
+        g4f.Provider.DDGS,
+        g4f.Provider.HuggingChat,
+        g4f.Provider.PollinationsAI,
+        g4f.Provider.Pi,
+        g4f.Provider.Copilot,
+        g4f.Provider.Gemini,
+        g4f.Provider.OpenRouter
+    ]
+
     try:
+
         data = request.get_json()
 
         if not data or "messages" not in data:
@@ -94,8 +105,11 @@ def scrape_ai():
                 "error": "Missing messages array"
             }), 400
 
-        for provider in PROVIDERS:
+        errors = []
+
+        for provider in providers:
             try:
+
                 response = client.chat.completions.create(
                     model="gpt-4o-mini",
                     provider=provider,
@@ -104,24 +118,22 @@ def scrape_ai():
 
                 reply = response.choices[0].message.content
 
-                if (
-                    "log in" in reply.lower()
-                    or "sign in" in reply.lower()
-                    or "pricing" in reply.lower()
-                ):
-                    continue
+                if reply:
+                    return jsonify({
+                        "provider": provider.__name__,
+                        "reply": reply
+                    })
 
-                return jsonify({
+            except Exception as e:
+                errors.append({
                     "provider": provider.__name__,
-                    "reply": reply
+                    "error": str(e)
                 })
-
-            except Exception as provider_error:
-                print(f"{provider.__name__} failed: {provider_error}")
                 continue
 
         return jsonify({
-            "error": "No provider worked"
+            "error": "No provider worked",
+            "details": errors
         }), 500
 
     except Exception as e:
