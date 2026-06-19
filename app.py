@@ -6,32 +6,31 @@ import g4f
 app = Flask(__name__)
 CORS(app)
 
-# कुकीज़ और इंटरनल लॉगिंग एरर से बचने के लिए इसे बंद रखें
 g4f.debug.logging = False
 
-# नए अपडेट के अनुसार सही नाम (ApiAirforce) इस्तेमाल किया गया है
-PROVIDERS = [
-    g4f.Provider.ApiAirforce,
-    g4f.Provider.PollinationsAI
+# ये दोनों प्रोवाइडर्स बिना किसी API Key के बिल्कुल सही काम करते हैं
+# इनके मॉडल नाम को नए सिंटैक्स के हिसाब से फिक्स कर दिया है
+CONFIGS = [
+    {"provider": g4f.Provider.PollinationsAI, "model": "gpt-4o"}, # Pollinations के लिए सही मॉडल नाम
+    {"provider": g4f.Provider.DDG, "model": "gpt-4o-mini"}         # DuckDuckGo के लिए सही मॉडल नाम
 ]
 
 @app.route("/")
 def home():
     return jsonify({
         "status": "GPT4Free API Running",
-        "mode": "Stealth Providers Locked"
+        "mode": "Fixed Provider Catalog"
     })
 
 @app.route("/test")
 def test():
     results = []
     
-    for provider in PROVIDERS:
+    for cfg in CONFIGS:
         try:
-            # बिना कुकीज़ वाले डायरेक्ट प्रोवाइडर को कॉल करना
             response = g4f.ChatCompletion.create(
-                model="gpt-4o-mini",
-                provider=provider,
+                model=cfg["model"],
+                provider=cfg["provider"],
                 messages=[{"role": "user", "content": "Reply only with HI"}],
                 stream=False
             )
@@ -39,13 +38,13 @@ def test():
             if response:
                 return jsonify({
                     "status": "SUCCESS",
-                    "provider": provider.__name__,
+                    "provider": cfg["provider"].__name__,
                     "reply": str(response)
                 }), 200
 
         except Exception as e:
             results.append({
-                "provider": provider.__name__,
+                "provider": cfg["provider"].__name__,
                 "status": "FAILED",
                 "error": str(e)
             })
@@ -63,18 +62,18 @@ def scrape_ai():
         if not data or "messages" not in data:
             return jsonify({"error": "Missing messages array"}), 400
 
-        for provider in PROVIDERS:
+        for cfg in CONFIGS:
             try:
                 response = g4f.ChatCompletion.create(
-                    model="gpt-4o-mini",
-                    provider=provider,
+                    model=cfg["model"],
+                    provider=cfg["provider"],
                     messages=data["messages"],
                     stream=False
                 )
                 
                 if response:
                     return jsonify({
-                        "provider": provider.__name__,
+                        "provider": cfg["provider"].__name__,
                         "reply": str(response)
                     }), 200
             except Exception:
