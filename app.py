@@ -9,6 +9,14 @@ CORS(app)
 
 client = Client()
 
+# Working providers
+PROVIDERS = [
+    g4f.Provider.DDGS,
+    g4f.Provider.HuggingChat,
+    g4f.Provider.PollinationsAI
+]
+
+
 @app.route("/")
 def home():
     return jsonify({
@@ -38,14 +46,7 @@ def providers():
 @app.route("/test")
 def test():
 
-    providers = [
-        g4f.Provider.DDGS,
-        g4f.Provider.HuggingChat,
-        g4f.Provider.You,
-        g4f.Provider.PollinationsAI
-    ]
-
-    for provider in providers:
+    for provider in PROVIDERS:
         try:
             response = client.chat.completions.create(
                 model="gpt-4o-mini",
@@ -53,14 +54,24 @@ def test():
                 messages=[
                     {
                         "role": "user",
-                        "content": "Hello"
+                        "content": "Reply only with HI"
                     }
                 ]
             )
 
+            reply = response.choices[0].message.content
+
+            # Skip login pages and pricing messages
+            if (
+                "log in" in reply.lower()
+                or "sign in" in reply.lower()
+                or "pricing" in reply.lower()
+            ):
+                continue
+
             return jsonify({
                 "provider": provider.__name__,
-                "reply": response.choices[0].message.content
+                "reply": reply
             })
 
         except Exception as e:
@@ -83,14 +94,7 @@ def scrape_ai():
                 "error": "Missing messages array"
             }), 400
 
-        providers = [
-            g4f.Provider.DDGS,
-            g4f.Provider.HuggingChat,
-            g4f.Provider.You,
-            g4f.Provider.PollinationsAI
-        ]
-
-        for provider in providers:
+        for provider in PROVIDERS:
             try:
                 response = client.chat.completions.create(
                     model="gpt-4o-mini",
@@ -98,9 +102,18 @@ def scrape_ai():
                     messages=data["messages"]
                 )
 
+                reply = response.choices[0].message.content
+
+                if (
+                    "log in" in reply.lower()
+                    or "sign in" in reply.lower()
+                    or "pricing" in reply.lower()
+                ):
+                    continue
+
                 return jsonify({
                     "provider": provider.__name__,
-                    "reply": response.choices[0].message.content
+                    "reply": reply
                 })
 
             except Exception as provider_error:
