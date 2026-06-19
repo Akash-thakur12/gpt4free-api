@@ -2,11 +2,13 @@ import os
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from g4f.client import Client
+import g4f.Provider
 
 app = Flask(__name__)
 CORS(app)
 
 client = Client()
+
 
 @app.route("/")
 def home():
@@ -16,20 +18,39 @@ def home():
     })
 
 
+@app.route("/providers")
+def providers():
+    try:
+        provider_list = [
+            name for name in dir(g4f.Provider)
+            if not name.startswith("_")
+        ]
+
+        return jsonify({
+            "providers": provider_list
+        })
+
+    except Exception as e:
+        return jsonify({
+            "error": str(e)
+        }), 500
+
+
 @app.route("/test")
 def test():
     try:
         response = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
-                {"role": "user", "content": "Hello"}
+                {
+                    "role": "user",
+                    "content": "Hello"
+                }
             ]
         )
 
-        reply_text = str(response.choices[0].message.content)
-
         return jsonify({
-            "reply": reply_text
+            "reply": response.choices[0].message.content
         })
 
     except Exception as e:
@@ -53,10 +74,8 @@ def scrape_ai():
             messages=data["messages"]
         )
 
-        reply_text = str(response.choices[0].message.content)
-
         return jsonify({
-            "reply": reply_text
+            "reply": response.choices[0].message.content
         })
 
     except Exception as e:
