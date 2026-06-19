@@ -15,8 +15,7 @@ def home():
 @app.route("/test")
 def test():
     try:
-        # यहाँ से हमने provider=g4f.Provider.Blackbox हटा दिया है
-        # अब g4f खुद बैकएंड में चालू फ्री प्रोवाइडर ढूंढ लेगा
+        # ऑटोमैटिक वर्किंग प्रोवाइडर को कॉल करना
         response = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
@@ -24,8 +23,11 @@ def test():
             ]
         )
 
+        # स्ट्रक्चर को सुरक्षित पार्स करना
+        reply_text = response.choices[0].message.content
+
         return jsonify({
-            "reply": response.choices[0].message.content
+            "reply": reply_text
         })
 
     except Exception as e:
@@ -39,14 +41,15 @@ def scrape_ai():
         if not data or 'messages' not in data:
             return jsonify({"error": "Missing messages array"}), 400
 
-        # यहाँ भी ऑटोमैटिक बेस्ट प्रोवाइडर सिलेक्शन सेट कर दिया है
         response = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=data["messages"]
         )
 
+        reply_text = response.choices[0].message.content
+
         return jsonify({
-            "reply": response.choices[0].message.content
+            "reply": reply_text
         })
 
     except Exception as e:
