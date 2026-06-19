@@ -12,8 +12,7 @@ client = Client()
 
 # Stable providers
 PROVIDERS = [
-    g4f.Provider.HuggingChat,
-    g4f.Provider.Pi,
+    g4f.Provider.PollinationsAI
 ]
 
 @app.route("/")
