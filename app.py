@@ -1,3 +1,4 @@
+```python
 import os
 from flask import Flask, request, jsonify
 from flask_cors import CORS
@@ -43,7 +44,8 @@ def test():
                         "role": "user",
                         "content": "Reply only with HI"
                     }
-                ]
+                ],
+                stream=False
             )
 
             if response:
@@ -69,6 +71,7 @@ def test():
 @app.route("/scrape-ai", methods=["POST"])
 def scrape_ai():
     try:
+
         data = request.get_json()
 
         if not data or "messages" not in data:
@@ -83,7 +86,54 @@ def scrape_ai():
                 response = g4f.ChatCompletion.create(
                     model=cfg["model"],
                     provider=cfg["provider"],
-                    messages=data["messages"]
+                    messages=data["messages"],
+                    stream=False
+                )
+
+                if response:
+                    return jsonify({
+                        "provider": cfg["provider"].__name__,
+                        "reply": str(response)
+                    })
+
+            except Exception as e:
+                errors.append({
+                    "provider": cfg["provider"].__name__,
+                    "error": str(e)
+                })
+
+        return jsonify({
+            "error": "No provider worked",
+            "details": errors
+        }), 500
+
+    except Exception as e:
+        return jsonify({
+            "error": str(e)
+        }), 500
+
+
+@app.route("/chat")
+def chat():
+    try:
+
+        msg = request.args.get("msg", "Hello")
+
+        errors = []
+
+        for cfg in CONFIGS:
+            try:
+
+                response = g4f.ChatCompletion.create(
+                    model=cfg["model"],
+                    provider=cfg["provider"],
+                    messages=[
+                        {
+                            "role": "user",
+                            "content": msg
+                        }
+                    ],
+                    stream=False
                 )
 
                 if response:
@@ -112,3 +162,4 @@ def scrape_ai():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+```
