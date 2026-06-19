@@ -2,3 +2,6 @@ Flask
 Flask-Cors
 g4f
 gunicorn
+curl_cffi
+zendriver
+platformdirs
