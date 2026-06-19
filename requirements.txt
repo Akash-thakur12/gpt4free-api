@@ -1,4 +1,4 @@
-flask
-flask-cors
+Flask
+Flask-Cors
 g4f
 gunicorn
