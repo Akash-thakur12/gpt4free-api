@@ -8,11 +8,18 @@ CORS(app)
 
 g4f.debug.logging = False
 
-# तुम्हारी लाइव लिस्ट से निकाले गए सबसे बेहतरीन प्रोवाइडर्स और उनके सटीक मॉडल्स
+# Working providers
 CONFIGS = [
-    {"provider": g4f.Provider.PollinationsAI, "model": "openai"},  # Pollinations के नए अपडेट में "openai" मॉडल नेम काम करता है
-    {"provider": g4f.Provider.PuterJS, "model": "gpt-4o-mini"}      # लिस्ट में मौजूद PuterJS पूरी तरह फ्री और स्टेबल है
+    {
+        "provider": g4f.Provider.PollinationsAI,
+        "model": "openai"
+    },
+    {
+        "provider": g4f.Provider.PuterJS,
+        "model": "gpt-4o-mini"
+    }
 ]
+
 
 @app.route("/")
 def home():
@@ -21,25 +28,30 @@ def home():
         "mode": "Live List Verified"
     })
 
+
 @app.route("/test")
 def test():
     results = []
-    
+
     for cfg in CONFIGS:
         try:
             response = g4f.ChatCompletion.create(
                 model=cfg["model"],
                 provider=cfg["provider"],
-                messages=[{"role": "user", "content": "Reply only with HI"}],
-                stream=False
+                messages=[
+                    {
+                        "role": "user",
+                        "content": "Reply only with HI"
+                    }
+                ]
             )
-            
+
             if response:
                 return jsonify({
                     "status": "SUCCESS",
                     "provider": cfg["provider"].__name__,
                     "reply": str(response)
-                }), 200
+                })
 
         except Exception as e:
             results.append({
@@ -47,41 +59,55 @@ def test():
                 "status": "FAILED",
                 "error": str(e)
             })
-            continue
-            
+
     return jsonify({
         "status": "FAILED",
         "details": results
     }), 500
 
+
 @app.route("/scrape-ai", methods=["POST"])
 def scrape_ai():
     try:
         data = request.get_json()
+
         if not data or "messages" not in data:
-            return jsonify({"error": "Missing messages array"}), 400
+            return jsonify({
+                "error": "Missing messages array"
+            }), 400
+
+        errors = []
 
         for cfg in CONFIGS:
             try:
                 response = g4f.ChatCompletion.create(
                     model=cfg["model"],
                     provider=cfg["provider"],
-                    messages=data["messages"],
-                    stream=False
+                    messages=data["messages"]
                 )
-                
+
                 if response:
                     return jsonify({
                         "provider": cfg["provider"].__name__,
                         "reply": str(response)
-                    }), 200
-            except Exception:
-                continue
+                    })
 
-        return jsonify({"error": "पंडित जी अभी ध्यान में हैं, कृपया दोबारा प्रयास करें।"}), 500
+            except Exception as e:
+                errors.append({
+                    "provider": cfg["provider"].__name__,
+                    "error": str(e)
+                })
+
+        return jsonify({
+            "error": "No provider worked",
+            "details": errors
+        }), 500
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({
+            "error": str(e)
+        }), 500
+
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
