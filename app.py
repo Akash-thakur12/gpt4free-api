@@ -8,11 +8,10 @@ CORS(app)
 
 g4f.debug.logging = False
 
-# ये दोनों प्रोवाइडर्स बिना किसी API Key के बिल्कुल सही काम करते हैं
-# इनके मॉडल नाम को नए सिंटैक्स के हिसाब से फिक्स कर दिया है
+# g4f के नए नियमों के अनुसार बिल्कुल सटीक प्रोवाइडर्स और मॉडल्स नाम
 CONFIGS = [
-    {"provider": g4f.Provider.PollinationsAI, "model": "gpt-4o"}, # Pollinations के लिए सही मॉडल नाम
-    {"provider": g4f.Provider.DDG, "model": "gpt-4o-mini"}         # DuckDuckGo के लिए सही मॉडल नाम
+    {"provider": g4f.Provider.PollinationsAI, "model": "gpt-4o"},
+    {"provider": g4f.Provider.DDGS, "model": "gpt-4o-mini"} # DDG को बदलकर DDGS कर दिया गया है
 ]
 
 @app.route("/")
