@@ -2,30 +2,25 @@ import os
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from g4f.client import Client
+import g4f.Provider
 
 app = Flask(__name__)
 CORS(app)
 
 client = Client()
 
-
 @app.route("/")
 def home():
-    return jsonify({
-        "status": "GPT4Free API Running"
-    })
-
+    return jsonify({"status": "GPT4Free API Running"})
 
 @app.route("/test")
 def test():
     try:
         response = client.chat.completions.create(
             model="gpt-4o-mini",
+            provider=g4f.Provider.Blackbox,
             messages=[
-                {
-                    "role": "user",
-                    "content": "Hello"
-                }
+                {"role": "user", "content": "Hello"}
             ]
         )
 
@@ -34,9 +29,7 @@ def test():
         })
 
     except Exception as e:
-        return jsonify({
-            "error": str(e)
-        }), 500
+        return jsonify({"error": str(e)}), 500
 
 
 @app.route("/scrape-ai", methods=["POST"])
@@ -44,13 +37,9 @@ def scrape_ai():
     try:
         data = request.get_json()
 
-        if not data or "messages" not in data:
-            return jsonify({
-                "error": "Missing messages"
-            }), 400
-
         response = client.chat.completions.create(
             model="gpt-4o-mini",
+            provider=g4f.Provider.Blackbox,
             messages=data["messages"]
         )
 
@@ -59,9 +48,7 @@ def scrape_ai():
         })
 
     except Exception as e:
-        return jsonify({
-            "error": str(e)
-        }), 500
+        return jsonify({"error": str(e)}), 500
 
 
 if __name__ == "__main__":
