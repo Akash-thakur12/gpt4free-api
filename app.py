@@ -6,44 +6,55 @@ import g4f
 app = Flask(__name__)
 CORS(app)
 
-# कुकीज़ और लॉगिंग एरर से बचने के लिए इसे डिसेबल करें
+# कुकीज़ और इंटरनल लॉगिंग एरर से बचने के लिए इसे बंद रखें
 g4f.debug.logging = False
 
-# केवल वे प्रोवाइडर्स जो बिना कुकीज़/फ़ाइल सिस्टम के सीधे चलते हैं
-STABLE_PROVIDER = g4f.Provider.Airforce  # या g4f.Provider.PollinationsAI
+# नए अपडेट के अनुसार सही नाम (ApiAirforce) इस्तेमाल किया गया है
+PROVIDERS = [
+    g4f.Provider.ApiAirforce,
+    g4f.Provider.PollinationsAI
+]
 
 @app.route("/")
 def home():
     return jsonify({
         "status": "GPT4Free API Running",
-        "mode": "No-Cookies API Mode"
+        "mode": "Stealth Providers Locked"
     })
 
 @app.route("/test")
 def test():
-    try:
-        # यहाँ हम सीधे स्टेबल प्रोवाइडर फ़ोर्स कर रहे हैं जो कुकीज़ नहीं मांगता
-        response = g4f.ChatCompletion.create(
-            model="gpt-4o-mini",
-            provider=STABLE_PROVIDER,
-            messages=[{"role": "user", "content": "Reply only with HI"}],
-            stream=False
-        )
-        
-        if response:
-            return jsonify({
-                "status": "SUCCESS",
-                "provider": STABLE_PROVIDER.__name__,
-                "reply": str(response)
-            }), 200
-        else:
-            return jsonify({"status": "FAILED", "error": "Empty response"}), 500
+    results = []
+    
+    for provider in PROVIDERS:
+        try:
+            # बिना कुकीज़ वाले डायरेक्ट प्रोवाइडर को कॉल करना
+            response = g4f.ChatCompletion.create(
+                model="gpt-4o-mini",
+                provider=provider,
+                messages=[{"role": "user", "content": "Reply only with HI"}],
+                stream=False
+            )
+            
+            if response:
+                return jsonify({
+                    "status": "SUCCESS",
+                    "provider": provider.__name__,
+                    "reply": str(response)
+                }), 200
 
-    except Exception as e:
-        return jsonify({
-            "status": "FAILED",
-            "error": str(e)
-        }), 500
+        except Exception as e:
+            results.append({
+                "provider": provider.__name__,
+                "status": "FAILED",
+                "error": str(e)
+            })
+            continue
+            
+    return jsonify({
+        "status": "FAILED",
+        "details": results
+    }), 500
 
 @app.route("/scrape-ai", methods=["POST"])
 def scrape_ai():
@@ -52,19 +63,24 @@ def scrape_ai():
         if not data or "messages" not in data:
             return jsonify({"error": "Missing messages array"}), 400
 
-        response = g4f.ChatCompletion.create(
-            model="gpt-4o-mini",
-            provider=STABLE_PROVIDER,
-            messages=data["messages"],
-            stream=False
-        )
-        
-        if response:
-            return jsonify({
-                "reply": str(response)
-            }), 200
-        else:
-            return jsonify({"error": "No response from working provider"}), 500
+        for provider in PROVIDERS:
+            try:
+                response = g4f.ChatCompletion.create(
+                    model="gpt-4o-mini",
+                    provider=provider,
+                    messages=data["messages"],
+                    stream=False
+                )
+                
+                if response:
+                    return jsonify({
+                        "provider": provider.__name__,
+                        "reply": str(response)
+                    }), 200
+            except Exception:
+                continue
+
+        return jsonify({"error": "पंडित जी अभी ध्यान में हैं, कृपया दोबारा प्रयास करें।"}), 500
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
