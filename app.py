@@ -1,3 +1,4 @@
+```python
 import os
 from flask import Flask, request, jsonify
 from flask_cors import CORS
@@ -9,6 +10,11 @@ CORS(app)
 
 client = Client()
 
+# Stable providers
+PROVIDERS = [
+    g4f.Provider.HuggingChat,
+    g4f.Provider.Pi,
+]
 
 @app.route("/")
 def home():
@@ -38,23 +44,14 @@ def providers():
 @app.route("/test")
 def test():
 
-    providers = [
-        g4f.Provider.DDGS,
-        g4f.Provider.HuggingChat,
-        g4f.Provider.PollinationsAI,
-        g4f.Provider.Pi,
-        g4f.Provider.Copilot,
-        g4f.Provider.Gemini,
-        g4f.Provider.OpenRouter
-    ]
-
     results = []
 
-    for provider in providers:
+    for provider in PROVIDERS:
+
         try:
 
             response = client.chat.completions.create(
-                model="gpt-4o-mini",
+                model="default",
                 provider=provider,
                 messages=[
                     {
@@ -86,16 +83,6 @@ def test():
 @app.route("/scrape-ai", methods=["POST"])
 def scrape_ai():
 
-    providers = [
-        g4f.Provider.DDGS,
-        g4f.Provider.HuggingChat,
-        g4f.Provider.PollinationsAI,
-        g4f.Provider.Pi,
-        g4f.Provider.Copilot,
-        g4f.Provider.Gemini,
-        g4f.Provider.OpenRouter
-    ]
-
     try:
 
         data = request.get_json()
@@ -107,11 +94,12 @@ def scrape_ai():
 
         errors = []
 
-        for provider in providers:
+        for provider in PROVIDERS:
+
             try:
 
                 response = client.chat.completions.create(
-                    model="gpt-4o-mini",
+                    model="default",
                     provider=provider,
                     messages=data["messages"]
                 )
@@ -125,10 +113,12 @@ def scrape_ai():
                     })
 
             except Exception as e:
+
                 errors.append({
                     "provider": provider.__name__,
                     "error": str(e)
                 })
+
                 continue
 
         return jsonify({
@@ -137,6 +127,7 @@ def scrape_ai():
         }), 500
 
     except Exception as e:
+
         return jsonify({
             "error": str(e)
         }), 500
@@ -145,3 +136,4 @@ def scrape_ai():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+```
